@@ -5,8 +5,8 @@ type Job struct {
 	Type       string      `json:"Type"`
 	Status     string      `json:"Status"`
 	ConsumedBy int         `json:"ConsumedBy,omitempty"`
-	Payload    interface{} `json:"Payload,omitempty"` // Job-specific data for processing
-	Result     interface{} `json:"Result,omitempty"`  // Result of job execution (optional)
+	Payload    interface{} `json:"Payload,omitempty"`
+	Result     interface{} `json:"Result,omitempty"`
 }
 
 type Node struct {
