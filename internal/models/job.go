@@ -1,9 +1,12 @@
 package models
 
 type Job struct {
-	ID     int    `json:"ID"`
-	Type   string `json:"Type"`
-	Status string `json:"Status"`
+	ID         int         `json:"ID"`
+	Type       string      `json:"Type"`
+	Status     string      `json:"Status"`
+	ConsumedBy int         `json:"ConsumedBy,omitempty"`
+	Payload    interface{} `json:"Payload,omitempty"` // Job-specific data for processing
+	Result     interface{} `json:"Result,omitempty"`  // Result of job execution (optional)
 }
 
 type Node struct {
