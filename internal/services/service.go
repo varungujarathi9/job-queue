@@ -42,7 +42,7 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	queue.Insert(&job)
 	jobStore[job.ID] = &job
 
-	json.NewEncoder(w).Encode(job)
+	fmt.Fprintf(w, strconv.Itoa(job.ID))
 }
 
 func DequeueService(w http.ResponseWriter, r *http.Request) {
