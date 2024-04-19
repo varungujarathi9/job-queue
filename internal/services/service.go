@@ -51,6 +51,12 @@ func DequeueService(w http.ResponseWriter, r *http.Request) {
 
 	if job := queue.Poll(); job != nil {
 		job.Status = IN_PROGRESS
+		queueConsumer, err := strconv.Atoi(r.Header.Get("QUEUE_CONSUMER"))
+		if err != nil {
+			http.Error(w, "Invalid QUEUE_CONSUMER", http.StatusBadRequest)
+			return
+		}
+		job.ConsumedBy = queueConsumer
 		json.NewEncoder(w).Encode(job)
 	} else {
 		http.Error(w, "No job available", http.StatusNotFound)
