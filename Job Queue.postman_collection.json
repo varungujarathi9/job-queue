@@ -1,0 +1,102 @@
+{
+	"info": {
+		"_postman_id": "bb9e5149-5c75-49c5-b74f-f3196291e88d",
+		"name": "Job Queue",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10589632"
+	},
+	"item": [
+		{
+			"name": "enqueue",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n \"Type\": \"TIME_CRITICAL\",\n \"Status\": \"IN_PROGRESS\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/jobs/enqueue",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"jobs",
+						"enqueue"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "dequeue",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "QUEUE_CONSUMER",
+						"value": "2",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:8080/jobs/dequeue",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"jobs",
+						"dequeue"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "conclude",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/jobs/1/conclude",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"jobs",
+						"1",
+						"conclude"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "job-info",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/jobs/10",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"jobs",
+						"10"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
