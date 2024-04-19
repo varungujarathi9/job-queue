@@ -2,9 +2,12 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 
+	"github.com/gorilla/mux"
 	"github.com/varungujarathi9/job-queue/internal/models"
 )
 
@@ -40,4 +43,62 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	jobStore[job.ID] = &job
 
 	json.NewEncoder(w).Encode(job)
+}
+
+func DequeueService(w http.ResponseWriter, r *http.Request) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if job := queue.Poll(); job != nil {
+		job.Status = IN_PROGRESS
+		json.NewEncoder(w).Encode(job)
+	} else {
+		http.Error(w, "No job available", http.StatusNotFound)
+	}
+}
+
+func ConcludeService(w http.ResponseWriter, r *http.Request) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["job_id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if job, exists := jobStore[id]; exists {
+		switch job.Status {
+		case QUEUED:
+			http.Error(w, "Dequeue job first in order to conclude", http.StatusBadRequest)
+		case CONCLUDED:
+			http.Error(w, "Job already concluded", http.StatusBadRequest)
+		default:
+			job.Status = CONCLUDED
+			fmt.Fprintf(w, "Job concluded successfully")
+		}
+	} else {
+		http.Error(w, "Job not found", http.StatusNotFound)
+	}
+
+}
+
+func JobService(w http.ResponseWriter, r *http.Request) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["job_id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if job, exists := jobStore[id]; exists {
+		json.NewEncoder(w).Encode(job)
+	} else {
+		http.Error(w, "Job not found", http.StatusNotFound)
+	}
+
 }
