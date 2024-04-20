@@ -44,6 +44,12 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if job.Type == "" || job.Status == "" {
+		utils.Logger.Info("Missing required fields")
+		http.Error(w, `{"status" : "Missing required fields"}`, http.StatusBadRequest)
+		return
+	}
+
 	if job.Type != "TIME_CRITICAL" && job.Type != "NOT_TIME_CRITICAL" {
 		http.Error(w, `{"status" : "Invalid Type value"}`, http.StatusBadRequest)
 		return
