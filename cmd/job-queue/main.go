@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/varungujarathi9/job-queue/internal/handlers"
+	"github.com/varungujarathi9/job-queue/internal/utils"
 )
 
 // @title Job Queue
@@ -12,5 +13,7 @@ import (
 // @host localhost:8080
 // @BasePath /jobs
 func main() {
+	utils.InitLogger()
 	handlers.Init()
+
 }

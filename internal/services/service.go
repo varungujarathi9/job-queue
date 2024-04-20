@@ -8,7 +8,9 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	"github.com/varungujarathi9/job-queue/internal/models"
+	"github.com/varungujarathi9/job-queue/internal/utils"
 )
 
 const (
@@ -37,9 +39,15 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	utils.Logger.WithFields(logrus.Fields{
+		"method": r.Method,
+		"url":    r.URL,
+	}).Info("Enqueue request received")
+
 	var job models.Job
 	err := json.NewDecoder(r.Body).Decode(&job)
 	if err != nil {
+		utils.Logger.Error("Error in decoding body flow: " + err.Error())
 		http.Error(w, `{"status" : "`+err.Error()+`"}`, http.StatusBadRequest)
 		return
 	}
@@ -51,6 +59,7 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if job.Type != "TIME_CRITICAL" && job.Type != "NOT_TIME_CRITICAL" {
+		utils.Logger.Info("Invalid Type value")
 		http.Error(w, `{"status" : "Invalid Type value"}`, http.StatusBadRequest)
 		return
 	}
@@ -60,7 +69,7 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	job.Status = QUEUED
 	queue.Insert(&job)
 	jobStore[job.ID] = &job
-
+	utils.Logger.Info("Returned response after enqueueing")
 	fmt.Fprintf(w, `{"id" : `+strconv.Itoa(job.ID)+`}`)
 }
 
@@ -76,17 +85,24 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 func DequeueService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
+	utils.Logger.WithFields(logrus.Fields{
+		"method": r.Method,
+		"url":    r.URL,
+	}).Info("Dequeue request received")
 
 	if job := queue.Poll(); job != nil {
 		job.Status = IN_PROGRESS
 		queueConsumer, err := strconv.Atoi(r.Header.Get("QUEUE_CONSUMER"))
 		if err != nil {
+			utils.Logger.Info("Invalid QUEUE_CONSUMER: " + r.Header.Get("QUEUE_CONSUMER"))
 			http.Error(w, `{"status" : "Invalid QUEUE_CONSUMER"}`, http.StatusBadRequest)
 			return
 		}
 		job.ConsumedBy = queueConsumer
+		utils.Logger.Info("Returned response after dequeueing job")
 		json.NewEncoder(w).Encode(job)
 	} else {
+		utils.Logger.Info("No job available")
 		http.Error(w, `{"status" : "No job available"}`, http.StatusBadRequest)
 	}
 }
@@ -103,10 +119,15 @@ func DequeueService(w http.ResponseWriter, r *http.Request) {
 func ConcludeService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
+	utils.Logger.WithFields(logrus.Fields{
+		"method": r.Method,
+		"url":    r.URL,
+	}).Info("Conclude request received")
 
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["job_id"])
 	if err != nil {
+		utils.Logger.Error("Error in converting job_id: " + err.Error())
 		http.Error(w, `{"status" : "`+err.Error()+`"}`, http.StatusBadRequest)
 		return
 	}
@@ -114,14 +135,18 @@ func ConcludeService(w http.ResponseWriter, r *http.Request) {
 	if job, exists := jobStore[id]; exists {
 		switch job.Status {
 		case QUEUED:
+			utils.Logger.Info("Conclude requested before dequeue")
 			http.Error(w, `{"status" : "Dequeue job first in order to conclude"}`, http.StatusBadRequest)
 		case CONCLUDED:
+			utils.Logger.Info("Job already concluded")
 			http.Error(w, `{"status" : "Job already concluded"}`, http.StatusBadRequest)
 		default:
 			job.Status = CONCLUDED
+			utils.Logger.Info("Job concluded successfully")
 			fmt.Fprintf(w, `{"status" : "Job concluded successfully"}`)
 		}
 	} else {
+		utils.Logger.Info("Job not found")
 		http.Error(w, `{"status" : "Job not found"}`, http.StatusBadRequest)
 	}
 
@@ -139,17 +164,24 @@ func ConcludeService(w http.ResponseWriter, r *http.Request) {
 func JobService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
+	utils.Logger.WithFields(logrus.Fields{
+		"method": r.Method,
+		"url":    r.URL,
+	}).Info("Job Info request received")
 
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["job_id"])
 	if err != nil {
+		utils.Logger.Error("Error in converting job_id: " + err.Error())
 		http.Error(w, `{"status" : "`+err.Error()+`"}`, http.StatusBadRequest)
 		return
 	}
 
 	if job, exists := jobStore[id]; exists {
+		utils.Logger.Info("Response returned for job info")
 		json.NewEncoder(w).Encode(job)
 	} else {
+		utils.Logger.Info("Job not found")
 		http.Error(w, `{"status" : "Job not found"}`, http.StatusBadRequest)
 	}
 
