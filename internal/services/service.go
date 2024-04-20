@@ -32,7 +32,7 @@ var (
 // @Param        job   body   models.Job   true   "Job object"
 // @Success      200  string  models.Job.ID
 // @Failure      400  string  http.StatusBadRequest
-// @Router       /jobs/enqueue [post]
+// @Router       /enqueue [post]
 func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -66,7 +66,7 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {object}     models.Job
 // @Failure      400  string       http.StatusBadRequest
 // @Failure      404  string       http.StatusNotFound
-// @Router       /jobs/dequeue [get]
+// @Router       /dequeue [get]
 func DequeueService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -93,7 +93,7 @@ func DequeueService(w http.ResponseWriter, r *http.Request) {
 // @Success      200  string  "Job concluded successfully"
 // @Failure      400  string  http.StatusBadRequest
 // @Failure      404  string  http.StatusNotFound
-// @Router       /jobs/{job_id}/conclude [put]
+// @Router       /{job_id}/conclude [put]
 func ConcludeService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -129,7 +129,7 @@ func ConcludeService(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {object}  models.Job
 // @Failure      400  string   http.StatusBadRequest
 // @Failure      404  string   http.StatusNotFound
-// @Router       /jobs/{job_id} [get]
+// @Router       /{job_id} [get]
 func JobService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()

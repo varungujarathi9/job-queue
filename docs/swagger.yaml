@@ -21,7 +21,7 @@ info:
   title: Job Queue
   version: "1.0"
 paths:
-  /jobs/{job_id}:
+  /{job_id}:
     get:
       description: Retrieves a Job by ID
       parameters:
@@ -46,7 +46,7 @@ paths:
           schema:
             type: string
       summary: Get Job by ID
-  /jobs/{job_id}/conclude:
+  /{job_id}/conclude:
     put:
       description: Concludes a Job by ID
       parameters:
@@ -71,7 +71,7 @@ paths:
           schema:
             type: string
       summary: Conclude Job
-  /jobs/dequeue:
+  /dequeue:
     get:
       description: Dequeues a Job from the queue
       parameters:
@@ -96,7 +96,7 @@ paths:
           schema:
             type: string
       summary: Dequeue Job
-  /jobs/enqueue:
+  /enqueue:
     post:
       consumes:
       - application/json

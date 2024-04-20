@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/jobs/dequeue": {
+        "/dequeue": {
             "get": {
                 "description": "Dequeues a Job from the queue",
                 "produces": [
@@ -54,7 +54,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/jobs/enqueue": {
+        "/enqueue": {
             "post": {
                 "description": "Enqueue Job by ID",
                 "consumes": [
@@ -88,7 +88,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/jobs/{job_id}": {
+        "/{job_id}": {
             "get": {
                 "description": "Retrieves a Job by ID",
                 "produces": [
@@ -126,7 +126,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/jobs/{job_id}/conclude": {
+        "/{job_id}/conclude": {
             "put": {
                 "description": "Concludes a Job by ID",
                 "produces": [

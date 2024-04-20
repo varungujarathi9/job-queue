@@ -10,7 +10,7 @@
     "host": "localhost:8080",
     "basePath": "/jobs",
     "paths": {
-        "/jobs/dequeue": {
+        "/dequeue": {
             "get": {
                 "description": "Dequeues a Job from the queue",
                 "produces": [
@@ -48,7 +48,7 @@
                 }
             }
         },
-        "/jobs/enqueue": {
+        "/enqueue": {
             "post": {
                 "description": "Enqueue Job by ID",
                 "consumes": [
@@ -82,7 +82,7 @@
                 }
             }
         },
-        "/jobs/{job_id}": {
+        "/{job_id}": {
             "get": {
                 "description": "Retrieves a Job by ID",
                 "produces": [
@@ -120,7 +120,7 @@
                 }
             }
         },
-        "/jobs/{job_id}/conclude": {
+        "/{job_id}/conclude": {
             "put": {
                 "description": "Concludes a Job by ID",
                 "produces": [
