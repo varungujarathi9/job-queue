@@ -13,6 +13,7 @@ import (
 // @host localhost:8080
 // @BasePath /jobs
 func main() {
+	// create a logger and start the handler mux
 	utils.InitLogger()
 	handlers.Init()
 

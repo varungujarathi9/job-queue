@@ -44,6 +44,7 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 		"url":    r.URL,
 	}).Info("Enqueue request received")
 
+	// marshal incoming request body to models.Job
 	var job models.Job
 	err := json.NewDecoder(r.Body).Decode(&job)
 	if err != nil {
@@ -52,18 +53,21 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// request body validation
 	if job.Type == "" || job.Status == "" {
 		utils.Logger.Info("Missing required fields")
 		http.Error(w, `{"status" : "Missing required fields"}`, http.StatusBadRequest)
 		return
 	}
 
+	// field Type validation
 	if job.Type != "TIME_CRITICAL" && job.Type != "NOT_TIME_CRITICAL" {
 		utils.Logger.Info("Invalid Type value")
 		http.Error(w, `{"status" : "Invalid Type value"}`, http.StatusBadRequest)
 		return
 	}
 
+	// add job to the linked list and give it an ID
 	job.ID = nextID
 	nextID++
 	job.Status = QUEUED
@@ -90,6 +94,7 @@ func DequeueService(w http.ResponseWriter, r *http.Request) {
 		"url":    r.URL,
 	}).Info("Dequeue request received")
 
+	// get the next job from the queue
 	if job := queue.Poll(); job != nil {
 		job.Status = IN_PROGRESS
 		queueConsumer, err := strconv.Atoi(r.Header.Get("QUEUE_CONSUMER"))
@@ -124,6 +129,7 @@ func ConcludeService(w http.ResponseWriter, r *http.Request) {
 		"url":    r.URL,
 	}).Info("Conclude request received")
 
+	// get job ID from URI path
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["job_id"])
 	if err != nil {
@@ -132,6 +138,7 @@ func ConcludeService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if job of this ID was created and if so conclude according to the flow
 	if job, exists := jobStore[id]; exists {
 		switch job.Status {
 		case QUEUED:
@@ -169,6 +176,7 @@ func JobService(w http.ResponseWriter, r *http.Request) {
 		"url":    r.URL,
 	}).Info("Job Info request received")
 
+	//  get job ID from URI path
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["job_id"])
 	if err != nil {
@@ -177,6 +185,7 @@ func JobService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//  check if a job of this ID was created, if so return its data
 	if job, exists := jobStore[id]; exists {
 		utils.Logger.Info("Response returned for job info")
 		json.NewEncoder(w).Encode(job)

@@ -15,6 +15,7 @@ type Node struct {
 }
 
 type JobQueue struct {
+	// a linked list structure for jobs
 	head *Node
 }
 

@@ -13,12 +13,17 @@ import (
 func Init() {
 	utils.Logger.Info("Starting REST API server")
 	router := mux.NewRouter()
+
+	// create routes for handling various job queue functions
 	subrouter := router.PathPrefix("/jobs").Subrouter()
 	subrouter.HandleFunc("/enqueue", services.EnqueueService).Methods("POST")
 	subrouter.HandleFunc("/dequeue", services.DequeueService).Methods("GET")
 	subrouter.HandleFunc("/{job_id}/conclude", services.ConcludeService).Methods("PUT")
 	subrouter.HandleFunc("/{job_id}", services.JobService).Methods("GET")
+
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+
 	utils.Logger.Info("Started server at port 8080")
+
 	http.ListenAndServe("localhost:8080", router)
 }
