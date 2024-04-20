@@ -25,6 +25,14 @@ var (
 	jobStore map[int]*models.Job = make(map[int]*models.Job)
 )
 
+// EnqueueService godoc
+// @Summary      Enqueue Job
+// @Description  Enqueue Job by ID
+// @Accept       json
+// @Param        job   body   models.Job   true   "Job object"
+// @Success      200  string  models.Job.ID
+// @Failure      400  string  http.StatusBadRequest
+// @Router       /jobs/enqueue [post]
 func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -32,7 +40,12 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	var job models.Job
 	err := json.NewDecoder(r.Body).Decode(&job)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, `{"status" : "`+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
+
+	if job.Type != "TIME_CRITICAL" && job.Type != "NOT_TIME_CRITICAL" {
+		http.Error(w, `{"status" : "Invalid Type value"}`, http.StatusBadRequest)
 		return
 	}
 
@@ -42,9 +55,18 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	queue.Insert(&job)
 	jobStore[job.ID] = &job
 
-	fmt.Fprintf(w, strconv.Itoa(job.ID))
+	fmt.Fprintf(w, `{"id" : `+strconv.Itoa(job.ID)+`}`)
 }
 
+// DequeueService godoc
+// @Summary      Dequeue Job
+// @Description  Dequeues a Job from the queue
+// @Produce      json
+// @Param        QUEUE_CONSUMER   header   int     true   "Queue Consumer ID"
+// @Success      200  {object}     models.Job
+// @Failure      400  string       http.StatusBadRequest
+// @Failure      404  string       http.StatusNotFound
+// @Router       /jobs/dequeue [get]
 func DequeueService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -53,16 +75,25 @@ func DequeueService(w http.ResponseWriter, r *http.Request) {
 		job.Status = IN_PROGRESS
 		queueConsumer, err := strconv.Atoi(r.Header.Get("QUEUE_CONSUMER"))
 		if err != nil {
-			http.Error(w, "Invalid QUEUE_CONSUMER", http.StatusBadRequest)
+			http.Error(w, `{"status" : "Invalid QUEUE_CONSUMER"}`, http.StatusBadRequest)
 			return
 		}
 		job.ConsumedBy = queueConsumer
 		json.NewEncoder(w).Encode(job)
 	} else {
-		http.Error(w, "No job available", http.StatusNotFound)
+		http.Error(w, `{"status" : "No job available"}`, http.StatusBadRequest)
 	}
 }
 
+// ConcludeService godoc
+// @Summary      Conclude Job
+// @Description  Concludes a Job by ID
+// @Produce      plain
+// @Param        job_id   path      int  true  "Job ID"
+// @Success      200  string  "Job concluded successfully"
+// @Failure      400  string  http.StatusBadRequest
+// @Failure      404  string  http.StatusNotFound
+// @Router       /jobs/{job_id}/conclude [put]
 func ConcludeService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -70,26 +101,35 @@ func ConcludeService(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["job_id"])
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, `{"status" : "`+err.Error()+`"}`, http.StatusBadRequest)
 		return
 	}
 
 	if job, exists := jobStore[id]; exists {
 		switch job.Status {
 		case QUEUED:
-			http.Error(w, "Dequeue job first in order to conclude", http.StatusBadRequest)
+			http.Error(w, `{"status" : "Dequeue job first in order to conclude"}`, http.StatusBadRequest)
 		case CONCLUDED:
-			http.Error(w, "Job already concluded", http.StatusBadRequest)
+			http.Error(w, `{"status" : "Job already concluded"}`, http.StatusBadRequest)
 		default:
 			job.Status = CONCLUDED
-			fmt.Fprintf(w, "Job concluded successfully")
+			fmt.Fprintf(w, `{"status" : "Job concluded successfully"}`)
 		}
 	} else {
-		http.Error(w, "Job not found", http.StatusNotFound)
+		http.Error(w, `{"status" : "Job not found"}`, http.StatusBadRequest)
 	}
 
 }
 
+// JobService godoc
+// @Summary      Get Job by ID
+// @Description  Retrieves a Job by ID
+// @Produce      json
+// @Param        job_id   path      int  true  "Job ID"
+// @Success      200  {object}  models.Job
+// @Failure      400  string   http.StatusBadRequest
+// @Failure      404  string   http.StatusNotFound
+// @Router       /jobs/{job_id} [get]
 func JobService(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -97,14 +137,14 @@ func JobService(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["job_id"])
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, `{"status" : "`+err.Error()+`"}`, http.StatusBadRequest)
 		return
 	}
 
 	if job, exists := jobStore[id]; exists {
 		json.NewEncoder(w).Encode(job)
 	} else {
-		http.Error(w, "Job not found", http.StatusNotFound)
+		http.Error(w, `{"status" : "Job not found"}`, http.StatusBadRequest)
 	}
 
 }

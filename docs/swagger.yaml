@@ -1,0 +1,121 @@
+basePath: /jobs
+definitions:
+  models.Job:
+    properties:
+      ConsumedBy:
+        type: integer
+      ID:
+        type: integer
+      Payload: {}
+      Result: {}
+      Status:
+        type: string
+      Type:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is a simple job queue server.
+  termsOfService: http://swagger.io/terms/
+  title: Job Queue
+  version: "1.0"
+paths:
+  /jobs/{job_id}:
+    get:
+      description: Retrieves a Job by ID
+      parameters:
+      - description: Job ID
+        in: path
+        name: job_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Job'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get Job by ID
+  /jobs/{job_id}/conclude:
+    put:
+      description: Concludes a Job by ID
+      parameters:
+      - description: Job ID
+        in: path
+        name: job_id
+        required: true
+        type: integer
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Job concluded successfully
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Conclude Job
+  /jobs/dequeue:
+    get:
+      description: Dequeues a Job from the queue
+      parameters:
+      - description: Queue Consumer ID
+        in: header
+        name: QUEUE_CONSUMER
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Job'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Dequeue Job
+  /jobs/enqueue:
+    post:
+      consumes:
+      - application/json
+      description: Enqueue Job by ID
+      parameters:
+      - description: Job object
+        in: body
+        name: job
+        required: true
+        schema:
+          $ref: '#/definitions/models.Job'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Enqueue Job
+swagger: "2.0"

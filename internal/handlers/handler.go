@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
+	_ "github.com/varungujarathi9/job-queue/docs"
 	"github.com/varungujarathi9/job-queue/internal/services"
 )
 
@@ -14,5 +16,6 @@ func Init() {
 	subrouter.HandleFunc("/dequeue", services.DequeueService).Methods("GET")
 	subrouter.HandleFunc("/{job_id}/conclude", services.ConcludeService).Methods("PUT")
 	subrouter.HandleFunc("/{job_id}", services.JobService).Methods("GET")
-	http.ListenAndServe("localhost:8080", subrouter)
+	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+	http.ListenAndServe("localhost:8080", router)
 }
