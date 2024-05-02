@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -21,10 +22,12 @@ const (
 )
 
 var (
-	queue                        = models.JobQueue{}
-	mutex                        = &sync.Mutex{}
-	nextID                       = 1
-	jobStore map[int]*models.Job = make(map[int]*models.Job)
+	queue                              = models.JobQueue{}
+	mutex                              = &sync.Mutex{}
+	nextID                             = 1
+	jobStore       map[int]*models.Job = make(map[int]*models.Job)
+	enqueueTimeout                     = 60000
+	dequeueTimeout                     = 30000
 )
 
 // EnqueueService godoc
@@ -70,6 +73,7 @@ func EnqueueService(w http.ResponseWriter, r *http.Request) {
 	// add job to the linked list and give it an ID
 	job.ID = nextID
 	nextID++
+	job.EnqueueTime = time.Now()
 	job.Status = QUEUED
 	queue.Insert(&job)
 	jobStore[job.ID] = &job
@@ -96,6 +100,22 @@ func DequeueService(w http.ResponseWriter, r *http.Request) {
 
 	// get the next job from the queue
 	if job := queue.Poll(); job != nil {
+		for {
+			// check if job is not nill
+			if job == nil {
+				utils.Logger.Info("No job available")
+				http.Error(w, `{"status" : "No job available"}`, http.StatusBadRequest)
+				return
+			}
+
+			// calculate elapsed time from job was enqueued
+			elapsed := time.Now().Sub(job.EnqueueTime)
+			if job.Cancel || elapsed > time.Duration(enqueueTimeout) {
+				job = queue.Poll()
+			} else {
+				break
+			}
+		}
 		job.Status = IN_PROGRESS
 		queueConsumer, err := strconv.Atoi(r.Header.Get("QUEUE_CONSUMER"))
 		if err != nil {
@@ -140,6 +160,10 @@ func ConcludeService(w http.ResponseWriter, r *http.Request) {
 
 	// check if job of this ID was created and if so conclude according to the flow
 	if job, exists := jobStore[id]; exists {
+		if job.Cancel {
+			utils.Logger.Info("Job already cancelled so cannot conclude")
+			http.Error(w, `{"status" : "Job already cancelled so cannot conclude"}`, http.StatusBadRequest)
+		}
 		switch job.Status {
 		case QUEUED:
 			utils.Logger.Info("Conclude requested before dequeue")
@@ -194,4 +218,59 @@ func JobService(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"status" : "Job not found"}`, http.StatusBadRequest)
 	}
 
+}
+
+func CancelService(w http.ResponseWriter, r *http.Request) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	utils.Logger.WithFields(logrus.Fields{
+		"method": r.Method,
+		"url":    r.URL,
+	}).Info("Job cancel request received")
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["job_id"])
+
+	if err != nil {
+		utils.Logger.Error("Error in canceling job_id: " + err.Error())
+		http.Error(w, `{"status" : "`+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
+
+	if job, exists := jobStore[id]; exists {
+		job.Cancel = true
+		fmt.Fprintf(w, `{"status" : "Job cancelled successfully"}`)
+	} else {
+		http.Error(w, `{"status" : "Job not found"}`, http.StatusBadRequest)
+	}
+}
+
+func RetryService(w http.ResponseWriter, r *http.Request) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["job_id"])
+
+	if err != nil {
+		utils.Logger.Error("Error in retrying job_id: " + err.Error())
+		http.Error(w, `{"status" : "`+err.Error()+`"}`, http.StatusBadRequest)
+		return
+	}
+
+	if job, exists := jobStore[id]; exists {
+		if job.Cancel {
+			utils.Logger.Info("Job already cancelled so cannot retry")
+			http.Error(w, `{"status" : "Job already cancelled so cannot retry"}`, http.StatusBadRequest)
+			return
+		}
+
+		job.Status = QUEUED
+		job.EnqueueTime = time.Now()
+
+		queue.Insert(job)
+
+		fmt.Fprintf(w, `{"status" : "Job enqueued for retry"}`)
+	}
 }

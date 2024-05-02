@@ -19,7 +19,9 @@ func Init() {
 	subrouter.HandleFunc("/enqueue", services.EnqueueService).Methods("POST")
 	subrouter.HandleFunc("/dequeue", services.DequeueService).Methods("GET")
 	subrouter.HandleFunc("/{job_id}/conclude", services.ConcludeService).Methods("PUT")
+	subrouter.HandleFunc("/{job_id}/cancel", services.CancelService).Methods("DELETE")
 	subrouter.HandleFunc("/{job_id}", services.JobService).Methods("GET")
+	subrouter.HandleFunc("/{job_id}/retry", services.RetryService).Methods("PUT")
 
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 

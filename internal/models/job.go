@@ -1,12 +1,17 @@
 package models
 
+import "time"
+
 type Job struct {
-	ID         int         `json:"ID"`
-	Type       string      `json:"Type"`
-	Status     string      `json:"Status"`
-	ConsumedBy int         `json:"ConsumedBy,omitempty"`
-	Payload    interface{} `json:"Payload,omitempty"`
-	Result     interface{} `json:"Result,omitempty"`
+	ID          int         `json:"ID"`
+	Type        string      `json:"Type"`
+	Status      string      `json:"Status"`
+	ConsumedBy  int         `json:"ConsumedBy,omitempty"`
+	Payload     interface{} `json:"Payload,omitempty"`
+	Result      interface{} `json:"Result,omitempty"`
+	Cancel      bool        `json:"Cancel,omitempty"`
+	EnqueueTime time.Time
+	DequeueTime time.Time
 }
 
 type Node struct {
